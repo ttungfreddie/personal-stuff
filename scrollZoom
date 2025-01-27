@@ -1,0 +1,56 @@
+using UnityEngine;
+using Cinemachine;
+
+public class ScrollZoom : MonoBehaviour
+{
+    CinemachineVirtualCamera vcam;
+    CinemachineFramingTransposer framingTransposer;
+
+    [SerializeField] float startingCameraDistance = 10;
+    [Space(5)]
+    [SerializeField] float minCameraDistance = 5;
+    [SerializeField] float maxCameraDistance = 40;
+    [Space(10)]
+    [Range(0.025f, 1f)]
+    [SerializeField] float scrollSensitivity = 0.5f;
+    public bool negateScrollDirection = false;
+    float maxLookaheadTime;
+    float lookaheadAdjusted;
+
+    void Start()
+    {
+        vcam = GetComponent<CinemachineVirtualCamera>();
+        framingTransposer = vcam.GetCinemachineComponent<CinemachineFramingTransposer>();
+        framingTransposer.m_CameraDistance = startingCameraDistance;
+        maxLookaheadTime = framingTransposer.m_LookaheadTime;
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        if (Input.mouseScrollDelta.y != 0)
+        {
+            var scroll = Input.mouseScrollDelta.y;
+            var adjustedScroll = scroll * scrollSensitivity;
+            NewCameraDistance(adjustedScroll);
+        }
+    }
+
+    private void NewCameraDistance(float adjustedScroll)
+    {
+        if (negateScrollDirection)
+        {
+            framingTransposer.m_CameraDistance =
+                Mathf.Clamp(framingTransposer.m_CameraDistance += adjustedScroll, minCameraDistance, maxCameraDistance);
+        }
+        else
+        {
+            framingTransposer.m_CameraDistance =
+                Mathf.Clamp(framingTransposer.m_CameraDistance -= adjustedScroll, minCameraDistance, maxCameraDistance);
+        }
+
+        if (maxLookaheadTime == 0) return;
+        lookaheadAdjusted = Mathf.Clamp(framingTransposer.m_CameraDistance / maxCameraDistance, 0.1f, maxLookaheadTime);
+        framingTransposer.m_LookaheadTime = lookaheadAdjusted;
+    }
+}
